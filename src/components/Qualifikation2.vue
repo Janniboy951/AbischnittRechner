@@ -67,6 +67,9 @@ export default defineComponent({
     getTotalQuali2() {
       let res;
       if (this.subjectsMuendlich.length == 1) {
+        this.singlePointsQuali2[4] = 0;
+      }
+      if (this.subjectsMuendlich.length == 1) {
         res = sum(this.singlePointsQuali2.map((x) => x * 5));
       } else {
         res = sum(this.singlePointsQuali2.map((x) => x * 4));
