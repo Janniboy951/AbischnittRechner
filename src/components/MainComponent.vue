@@ -82,6 +82,7 @@
         :gesamtpunktzahl="pointsQuali1 + pointsQuali2"
     /></Qualifikation2Component>
   </table>
+  <p>{{ usedCourses }}</p>
 </template>
 
 <script lang="ts">
@@ -295,10 +296,7 @@ export default defineComponent({
           [0, 0, 0, 0],
           [0, 0, 0, 0],
         ];
-        [this.usedCourses[0], this.usedCourses[1], this.usedCourses[2]] = lks(
-          this.ownSubjects,
-          this.marks
-        );
+        lks(this.usedCourses, this.ownSubjects, this.marks);
         this.usedCourses = pflichtfach(
           this.ownSubjects,
           this.usedCourses,

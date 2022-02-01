@@ -182,7 +182,7 @@ export function calcLKs(params:type) {
 import { arrayEquals, findCommonElements, getLargest, sum } from "./helper";
 import { SubjectName, Marks, SubjMarksKeys } from "./Types";
 
-export function lks(ownSubjects: SubjectName[], marks: Marks) {
+export function lks(usedCourses: any[], ownSubjects: SubjectName[], marks: Marks) {
   const returnValue = [
     [2, 2, 2, 2],
     [2, 2, 2, 2],
@@ -194,8 +194,10 @@ export function lks(ownSubjects: SubjectName[], marks: Marks) {
     sum(Object.values(marks[ownSubjects[2]])),
   ];
   const indexOfWorst = markSums.indexOf(Math.min(...markSums));
-
-  returnValue[indexOfWorst] = [1, 1, 1, 1];
+  usedCourses[0] = [2, 2, 2, 2];
+  usedCourses[1] = [2, 2, 2, 2];
+  usedCourses[2] = [2, 2, 2, 2];
+  usedCourses[indexOfWorst] = [1, 1, 1, 1];
   return returnValue;
 }
 
@@ -332,7 +334,7 @@ export function fillCourses(ownSubjects: SubjectName[], usedCourses: number[][],
   while (getTotalUsedCourseNum(usedCourses) < 35) {
     let currentMaxMark = 0;
     let currentChosen: { subject: SubjectName; half_year: number } | undefined = undefined;
-    ownSubjects.forEach((v) => {
+    ownSubjects.slice(3).forEach((v) => {
       for (let i = 0; i < usedCourses[0].length; i++) {
         const mark = Object.values(marks[v])[i];
         if (mark >= currentMaxMark) {
