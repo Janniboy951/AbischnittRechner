@@ -1,7 +1,7 @@
 <template>
-  <table>
+  <table class="mainTable">
     <tr>
-      <th class="largeTitle" colspan="7">Quali Block 1</th>
+      <th class="largeTitle" colspan="7">Qualifikation Block I</th>
     </tr>
     <tr>
       <th>Fach</th>
@@ -14,46 +14,41 @@
     </tr>
     <tr v-for="(subject, index) in ownSubjects" :key="index">
       <td>
-        {{ index &lt; 3 ? "LK" : (index &lt; 10 ? "GK" :"Freiwillig")}}
+        {{ index &lt; 3 ? "LK" : "GK" }}
         {{ subject }}
-      </td>
-      <td>
         <input
-          type="number"
-          min="0"
-          max="15"
-          v-model="marks['11_2'][subject]"
-          :class="usedCourses[index][0] != 0 && 'usedMark'"
+          type="checkbox"
+          name="muendlich"
+          v-if="index &gt; 2"
+          title="Mündliches ABI?"
+          @input="(e) => muendlichChange(e, subject)"
         />
       </td>
       <td>
-        <input
-          type="number"
-          min="0"
-          max="15"
-          v-model="marks['12_1'][subject]"
-          :class="usedCourses[index][1] != 0 && 'usedMark'"
+        <MarkInputComponent
+          :courseUsed="usedCourses[index][0] != 0"
+          v-model="marks[subject]['11_2']"
         />
       </td>
       <td>
-        <input
-          type="number"
-          min="0"
-          max="15"
-          v-model="marks['12_2'][subject]"
-          :class="usedCourses[index][2] != 0 && 'usedMark'"
+        <MarkInputComponent
+          :courseUsed="usedCourses[index][1] != 0"
+          v-model="marks[subject]['12_1']"
         />
       </td>
       <td>
-        <input
-          type="number"
-          min="0"
-          max="15"
-          v-model="marks['13_1'][subject]"
-          :class="usedCourses[index][3] != 0 && 'usedMark'"
+        <MarkInputComponent
+          :courseUsed="usedCourses[index][2] != 0"
+          v-model="marks[subject]['12_2']"
         />
       </td>
-      <td>{{ getUsedCourseNum(index) }}</td>
+      <td>
+        <MarkInputComponent
+          :courseUsed="usedCourses[index][3] != 0"
+          v-model="marks[subject]['13_1']"
+        />
+      </td>
+      <td class="leftBorder">{{ getUsedCourseNum(index) }}</td>
       <td>{{ getSubjectPoints(index, subject) }}</td>
     </tr>
     <tr>
@@ -73,24 +68,57 @@
       <td></td>
       <td></td>
       <td></td>
+      <td class="leftBorder resultField">{{ getTotalUsedCourseNum() }}</td>
+      <td class="resultField">
+        {{ Math.round((getTotalPointSum() / 44) * 40) }}
+      </td>
     </tr>
+    <Qualifikation2Component
+      :subjectsMuendlich="subjectsMuendlich"
+      :ownSubjects="ownSubjects"
+      @pointsChange="(res) => (this.pointsQuali2 = res)"
+    >
+      <QualifikationGesamtComponent
+        :gesamtpunktzahl="pointsQuali1 + pointsQuali2"
+    /></Qualifikation2Component>
   </table>
-  <h1>Durchschnitt: {{ mean }}</h1>
-  <h1>Anzahl Kurse: {{ usedCourses }}</h1>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { calcMark } from "@/scripts/MarkCalculator";
-import { SubjectName, SubjName, SubjNames } from "@/scripts/Types";
+import {
+  ersteFremdsprache,
+  ersteGesellschaftwissenschaft,
+  ersteNaturwissenschaft,
+  fillCourses,
+  kuenstlerischesFach,
+  lks,
+  muendlich,
+  pflichtfach,
+  zweitesFach,
+} from "@/scripts/MarkCalculator";
+import { SubjectName, Marks } from "@/scripts/Types";
 import { sum } from "@/scripts/helper";
+import MarkInputComponent from "@/components/MarkInputComponent.vue";
+import QualifikationGesamtComponent from "@/components/QualifikationGesamt.vue";
+import Qualifikation2Component from "@/components/Qualifikation2.vue";
+import { getAbiDurchschnitt } from "@/scripts/GradeTable";
 
 export default defineComponent({
   name: "HelloWorld",
   props: {},
+  components: {
+    MarkInputComponent,
+    QualifikationGesamtComponent,
+    Qualifikation2Component,
+  },
   data() {
     return {
       newSubject: "",
+      abiDurchschnitt: "nicht bestanden",
+      pointsQuali1: 0,
+      pointsQuali2: 0,
+
       subjects: [
         "Deutsch",
         "Englisch",
@@ -109,58 +137,126 @@ export default defineComponent({
         "Geschichte",
         "Sozialkunde",
         "Erdkunde",
-        "Religion/ Ethik",
+        "Religion_Ethik",
       ] as SubjectName[],
-      ownSubjects: [
-        "Physik",
-        "Mathe",
-        "Sozialkunde",
-        "Deutsch",
-        "Latein",
-        "Informatik",
-        "Musik",
-        "Sport",
-        "Geschichte",
-        "Religion/ Ethik",
-        "Englisch",
-      ] as SubjectName[],
+      ownSubjects: [] as SubjectName[],
       marks: {
-        "11_2": {
-          Physik: 15,
-          Mathe: 15,
-          Sozialkunde: 15,
-          Deutsch: 14,
-          Latein: 12,
-          Informatik: "",
+        Deutsch: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
         },
-        "12_1": {
-          Physik: 15,
-          Mathe: 15,
-          Sozialkunde: 15,
-          Deutsch: 14,
-          Latein: 12,
+        Englisch: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
         },
-        "12_2": {
-          Physik: 15,
-          Mathe: 15,
-          Sozialkunde: 15,
-          Deutsch: 14,
-          Latein: 12,
+        Latein: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
         },
-        "13_1": {
-          Physik: 15,
-          Mathe: 15,
-          Sozialkunde: 15,
-          Deutsch: 14,
-          Latein: 12,
+        Französisch: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
         },
-      } as SubjNames,
+        Spanisch: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Mathe: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Chemie: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Physik: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Biologie: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Informatik: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Musik: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Kunst: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        DS: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Sport: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Geschichte: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Sozialkunde: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Erdkunde: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+        Religion_Ethik: {
+          "11_2": 0,
+          "12_1": 0,
+          "12_2": 0,
+          "13_1": 0,
+        },
+      } as Marks,
       mean: 0,
       usedCourses_1: 0,
+      subjectsMuendlich: [] as SubjectName[],
       usedCourses: [
-        [2, 2, 2, 2],
-        [0, 1, 1, 1],
-        [1, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
         [0, 0, 0, 0],
         [0, 0, 0, 0],
         [0, 0, 0, 0],
@@ -170,40 +266,142 @@ export default defineComponent({
         [0, 0, 0, 0],
         [0, 0, 0, 0],
       ],
+      singlePointsQuali2: [0, 0, 0, 0, 0],
     };
   },
   watch: {
+    pointsQuali1() {
+      this.abiDurchschnitt = getAbiDurchschnitt(
+        this.pointsQuali1 + this.pointsQuali2
+      );
+    },
+    pointsQuali2() {
+      this.abiDurchschnitt = getAbiDurchschnitt(
+        this.pointsQuali1 + this.pointsQuali2
+      );
+    },
     marks: {
-      handler(val) {
-        [this.mean, this.usedCourses_1] = calcMark(
-          this.marks,
-          this.ownSubjects
+      handler() {
+        this.usedCourses = [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ];
+        [this.usedCourses[0], this.usedCourses[1], this.usedCourses[2]] = lks(
+          this.ownSubjects,
+          this.marks
         );
+        this.usedCourses = pflichtfach(
+          this.ownSubjects,
+          this.usedCourses,
+          "Deutsch"
+        );
+        this.usedCourses = pflichtfach(
+          this.ownSubjects,
+          this.usedCourses,
+          "Mathe"
+        );
+        this.usedCourses = muendlich(
+          this.ownSubjects,
+          this.subjectsMuendlich,
+          this.usedCourses
+        );
+        kuenstlerischesFach(this.ownSubjects, this.usedCourses, this.marks);
+        ersteFremdsprache(
+          this.ownSubjects,
+          this.usedCourses,
+          this.marks,
+          this.subjectsMuendlich
+        );
+        ersteNaturwissenschaft(
+          this.ownSubjects,
+          this.usedCourses,
+          this.marks,
+          this.subjectsMuendlich
+        );
+        ersteGesellschaftwissenschaft(
+          this.ownSubjects,
+          this.usedCourses,
+          this.marks,
+          this.subjectsMuendlich
+        );
+        zweitesFach(this.ownSubjects, this.usedCourses, this.marks);
+        fillCourses(this.ownSubjects, this.usedCourses, this.marks);
       },
       deep: true,
     },
   },
   methods: {
+    getTotalUsedCourseNum() {
+      let res = 0;
+      for (let i = 0; i < this.usedCourses.length; i++) {
+        res += this.getUsedCourseNum(i);
+      }
+      return res;
+    },
+    getTotalPointSum() {
+      let res = 0;
+      for (let i = 0; i < this.ownSubjects.length; i++) {
+        const name = this.ownSubjects[i];
+
+        if (this.marks[name] == undefined) {
+          return 0;
+        }
+        const pointSum: number =
+          this.usedCourses[i][0] * this.marks[name]!["11_2"] +
+          this.usedCourses[i][1] * this.marks[name]!["12_1"] +
+          this.usedCourses[i][2] * this.marks[name]!["12_2"] +
+          this.usedCourses[i][3] * this.marks[name]!["13_1"];
+
+        res += pointSum;
+      }
+      this.pointsQuali1 = Math.round((res / 44) * 40);
+      return res;
+    },
     getUsedCourseNum(index: number) {
       return this.usedCourses[index].filter((x: number) => x > 0).length;
     },
-    getSubjectPoints(index: number, name: keyof SubjName): string {
+    getSubjectPoints(index: number, name: SubjectName): string {
+      if (this.marks[name] == undefined) {
+        return "0";
+      }
       const pointSum: number =
-        this.usedCourses[index][0] * this.marks["11_2"][name] +
-        this.usedCourses[index][1] * this.marks["12_1"][name] +
-        this.usedCourses[index][2] * this.marks["12_2"][name] +
-        this.usedCourses[index][3] * this.marks["13_1"][name];
+        this.usedCourses[index][0] * this.marks[name]!["11_2"] +
+        this.usedCourses[index][1] * this.marks[name]!["12_1"] +
+        this.usedCourses[index][2] * this.marks[name]!["12_2"] +
+        this.usedCourses[index][3] * this.marks[name]!["13_1"];
       if (sum(this.usedCourses[index]) == 8) {
         return (pointSum / 2).toString() + " * 2 = " + pointSum.toString();
       }
       return pointSum.toString();
+    },
+    muendlichChange(e: any, subject: SubjectName) {
+      if (e.target.checked) {
+        if (this.subjectsMuendlich.length >= 2) {
+          e.target.checked = false;
+          return;
+        }
+        this.subjectsMuendlich.push(subject);
+      } else {
+        this.subjectsMuendlich = this.subjectsMuendlich.filter(
+          (item) => item != subject
+        );
+      }
     },
   },
 });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
 table {
   width: 100%;
   border: 1px solid black;
@@ -228,29 +426,11 @@ th {
 .largeTitle {
   font-size: x-large;
 }
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+.leftBorder {
+  border-left: 1px solid black;
 }
-
-/* Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
-  text-align: center;
-  font-family: "Century Gothic", sans-serif;
-  outline: 0;
-  background: none;
-  width: 3ch;
-  border: none;
-  padding: 5px;
-  box-sizing: border-box;
-  font-size: 18px;
-}
-input[type="number"]:focus {
-  background: #f2f2f2;
-}
-.usedMark {
-  border: 1px solid black !important;
+.resultField {
+  border-top: 1px solid black;
+  background-color: #999;
 }
 </style>
