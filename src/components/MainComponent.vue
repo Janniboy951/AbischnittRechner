@@ -80,6 +80,14 @@
     >
       <QualifikationGesamtComponent
         :gesamtpunktzahl="pointsQuali1 + pointsQuali2"
+        :marks="marks"
+        :ownSubjects="ownSubjects"
+        @imported="
+          (v) => {
+            ownSubjects = v.ownSubjects;
+            marks = v.marks;
+          }
+        "
     /></Qualifikation2Component>
   </table>
   <p>{{ usedCourses }}</p>
