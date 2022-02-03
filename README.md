@@ -34,7 +34,7 @@ Keine 2 KF wenn kein Künstlerischer LK??
 
 #### Facharbeit
 
-- [ ] Zusätzlich zu den 35 Kursen kann das Ergebnis einer Facharbeit in einem der drei Leistungsfächer, die Punktzahl einfach gewertet, eingebracht werden, wenn sie mit mindestens fünf Punkten bewertet wurde.
+- [x] Zusätzlich zu den 35 Kursen kann das Ergebnis einer Facharbeit in einem der drei Leistungsfächer, die Punktzahl einfach gewertet, eingebracht werden, wenn sie mit mindestens fünf Punkten bewertet wurde.
 
 #### Insgesamt
 

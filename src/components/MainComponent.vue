@@ -65,8 +65,10 @@
         <button @click="ownSubjects.push(newSubject)">Fach hinzufügen</button>
       </td>
       <td></td>
-      <td></td>
-      <td></td>
+      <td>Facharbeit:</td>
+      <td>
+        <MarkInputComponent :courseUsed="facharbeit > 4" v-model="facharbeit" />
+      </td>
       <td></td>
       <td class="leftBorder resultField">{{ getTotalUsedCourseNum() }}</td>
       <td class="resultField">
@@ -127,6 +129,7 @@ export default defineComponent({
       abiDurchschnitt: "nicht bestanden",
       pointsQuali1: 0,
       pointsQuali2: 0,
+      facharbeit: 0,
 
       subjects: [
         "Deutsch",
@@ -368,6 +371,9 @@ export default defineComponent({
           this.usedCourses[i][3] * this.marks[name]!["13_1"];
 
         res += pointSum;
+      }
+      if (this.facharbeit > 4) {
+        res += this.facharbeit;
       }
       this.pointsQuali1 = Math.round((res / 44) * 40);
       return res;
