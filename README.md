@@ -1,5 +1,5 @@
 # Abischnittrechner
-
+![72%](https://progress-bar.dev/72/?scale=100&width=1000)
 ## Offizielle Angaben
 
 Seite der Landesregierung zur MSS: [MSS RLP](https://mss.rlp.de/de/startseite/)  
